@@ -8,4 +8,5 @@ library Errors {
     error MaxUsernameLength(uint8 _maxLength);
     error IncorrectSignature();
     error InvalidSymbols();
+    error OnlyAccountFactory();
 }

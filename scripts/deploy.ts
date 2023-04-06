@@ -1,19 +1,19 @@
-const {ethers, upgrades} = require("hardhat")
+const { ethers, upgrades } = require("hardhat")
 
 async function main() {
-  // const SignerVerification = await ethers.getContractFactory('SignerVerification')
-  // const signerVer = await SignerVerification.deploy()
-  // await signerVer.deployed()
+  const SignerVerification = await ethers.getContractFactory('SignerVerification')
+  const signerVer = await SignerVerification.deploy()
+  await signerVer.deployed()
 
-  // console.log("✅ signerVer:address", signerVer.address)
+  console.log("✅ signerVer:address", signerVer.address)
 
-  
+
 
   // const Constants = await ethers.getContractFactory("Constants")
   // const constants = await Constants.deploy()
   // await constants.deployed()
   // console.log("✅ constants:address", constants.address)
-  
+
   // const DataTypes = await ethers.getContractFactory("DataTypes")
   // const dataTypes = await DataTypes.deploy()
   // await dataTypes.deployed() 
@@ -32,7 +32,7 @@ async function main() {
 
   const ProfileTokenURI = await ethers.getContractFactory("ProfileTokenURI")
   const profileTokenURI = await ProfileTokenURI.deploy()
-  await profileTokenURI.deployed() 
+  await profileTokenURI.deployed()
   console.log("✅ profileTokenURI:address", profileTokenURI.address)
 
   // const Storage = await ethers.getContractFactory("Storage")
@@ -41,9 +41,9 @@ async function main() {
   // console.log("✅ storage:address", storage.address)
 
 
-  // const Profiles = await ethers.getContractFactory("Profiles", 
-  // {
-    
+  const Profiles = await ethers.getContractFactory("Profiles",
+    // {
+
     // libraries: {
     //   "Constants": constants.address,
     //   "DataTypes": dataTypes.address,
@@ -51,18 +51,29 @@ async function main() {
     //   "Helpers": helpers.address,
     //   // "ProfileTokenURI": profileTokenURI.address
     // }
-  // }
-  // );
-  // const profilesBeacon = await upgrades.deployBeacon(Profiles, {unsafeAllow: ['external-library-linking']});
+    // }
+  );
+  const profilesBeacon = await upgrades.deployBeacon(Profiles, { unsafeAllow: ['external-library-linking'] });
 
-  // await profilesBeacon.deployed() 
+  await profilesBeacon.deployed()
 
-  // const profiles = await upgrades.deployBeaconProxy(profilesBeacon, Profiles, ['0xe7b5B35181eeB87A6f2EE68ef923c4016Cd552fa', signerVer.address, profileTokenURI.address, ethers.BigNumber.from('10000'), 0])
-
+  const profiles = await upgrades.deployBeaconProxy(profilesBeacon, Profiles, ['0xe7b5B35181eeB87A6f2EE68ef923c4016Cd552fa', signerVer.address, profileTokenURI.address, ethers.BigNumber.from('10000'), 0])
+  console.log("✅ Profiles deployed to:", profiles.address);
 
   // const profiles = await upgrades.deployProxy(Profiles, ['0xe7b5B35181eeB87A6f2EE68ef923c4016Cd552fa', signerVer.address, profileTokenURI.address, ethers.BigNumber.from(10000), 0]);
   // await profiles.deployed();
-  // console.log("✅ Profiles deployed to:", profiles.address);
+
+  const AccountFactory = await ethers.getContractFactory("FrenlyAccountFactory");
+  const accountFactory = await AccountFactory.deploy('0x0576a174D229E3cFA37253523E645A78A0C91B57', profiles.address);
+
+  await accountFactory.deployed()
+  console.log("✅ Account factory deployed to:", accountFactory.address);
+
+  const txSAF = await profiles.setAccountFactory(accountFactory.address)
+  await txSAF.wait()
+
+  console.log("✅ Account wrote in profiles");
+
 }
 
 // We recommend this pattern to be able to use async/await everywhere

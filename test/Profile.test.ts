@@ -21,7 +21,7 @@ async function deployFixture() {
   // const constants = await Constants.deploy()
   // await constants.deployed()
   // console.log("✅ constants:address", constants.address)
-  
+
   // const DataTypes = await ethers.getContractFactory("DataTypes")
   // const dataTypes = await DataTypes.deploy()
   // await dataTypes.deployed() 
@@ -47,13 +47,13 @@ async function deployFixture() {
 
   const ProfileTokenURI = await ethers.getContractFactory("ProfileTokenURI")
   const profileTokenURI = await ProfileTokenURI.deploy()
-  await profileTokenURI.deployed() 
+  await profileTokenURI.deployed()
 
   console.log("✅ profileTokenURI:address", profileTokenURI.address)
-  
-  const Profiles = await ethers.getContractFactory("Profiles", 
-  // {
-    
+
+  const Profiles = await ethers.getContractFactory("Profiles",
+    // {
+
     // libraries: {
     //   "Constants": constants.address,
     //   "DataTypes": dataTypes.address,
@@ -61,59 +61,84 @@ async function deployFixture() {
     //   "Helpers": helpers.address,
     //   // "ProfileTokenURI": profileTokenURI.address
     // }
-  // }
+    // }
   );
-  const profilesBeacon = await upgrades.deployBeacon(Profiles, {unsafeAllow: ['external-library-linking']});
+  const profilesBeacon = await upgrades.deployBeacon(Profiles, { unsafeAllow: ['external-library-linking'] });
 
-  await profilesBeacon.deployed() 
+  await profilesBeacon.deployed()
 
   const profiles = await upgrades.deployBeaconProxy(profilesBeacon, Profiles, [owner.address, signerVer.address, profileTokenURI.address, ethers.BigNumber.from('10000'), 0])
+  await profiles.deployed()
 
-  return {  owner, otherAccount, profiles };
+  const EntryPoint = await ethers.getContractFactory("EntryPoint");
+  const entryPoint = await EntryPoint.deploy();
+
+  await entryPoint.deployed()
+
+  const AccountFactory = await ethers.getContractFactory("FrenlyAccountFactory");
+  const accountFactory = await AccountFactory.deploy(entryPoint.address, profiles.address);
+
+  await accountFactory.deployed()
+
+  const txSAF = await profiles.setAccountFactory(accountFactory.address)
+  await txSAF.wait()
+
+  return { owner, otherAccount, profiles, entryPoint, accountFactory };
 }
 
 describe("Lock", function () {
   // We define a fixture to reuse the same setup in every test.
   // We use loadFixture to run this setup once, snapshot that state,
   // and reset Hardhat Network to that snapshot in every test.
-  beforeEach(async ()=>{
+  beforeEach(async () => {
 
   })
 
   describe("Deployment", function () {
     it("Should set the right unlockTime", async function () {
-      const {  owner, profiles } = await loadFixture(deployFixture);
+      const { owner, profiles, accountFactory, entryPoint, otherAccount } = await loadFixture(deployFixture);
+      const computedAddress = await accountFactory.getAddress(owner.address, 2)
+      const createdSmartWalletTx = await accountFactory.createAccount(owner.address, 2, 'SASHA', '')
+      const resp = await createdSmartWalletTx.wait()
 
-      const username = 'sasha😊'
+      const createdSmartWallet = await ethers.getContractAt("FrenlyAccount", computedAddress)
 
-      await profiles.createProfile({imageURI: 'https://avatarko.ru/img/kartinka/1/Crazy_Frog.jpg', sig: '0x39d92deb64de7e86e4af5eec547ddd71cab383e62df3b89f4a627adcdd153a54427c5239052eba589d38083546e60cd4250e1e8eb61915f4dd73dc024f302e711c', to: owner.address, username})
+      const createdProfile = await profiles.getProfileByUsername('SASHA')
 
-      const createdProfile = await profiles.getProfileByUsername(username)
-      const createdProfile2 = await profiles.getProfileByAddress(owner.address)
-      console.log(createdProfile, createdProfile2);
-      
-    });
-    it("Should set the right unlockTime", async function () {
-      const {  owner, profiles } = await loadFixture(deployFixture);
+      console.log(createdProfile.owner, createdSmartWallet.address);
 
-      const username = `Sasha ${'😂'}`
+      // const username = 'sasha'
 
-      await profiles.createProfile(
-        {imageURI: 'https://avatarko.ru/img/kartinka/1/Crazy_Frog.jpg', sig: '0x39d92deb64de7e86e4af5eec547ddd71cab383e62df3b89f4a627adcdd153a54427c5239052eba589d38083546e60cd4250e1e8eb61915f4dd73dc024f302e711c', to: owner.address, username}
-        )
+      // await profiles.createProfile({ imageURI: 'https://avatarko.ru/img/kartinka/1/Crazy_Frog.jpg', sig: '0x39d92deb64de7e86e4af5eec547ddd71cab383e62df3b89f4a627adcdd153a54427c5239052eba589d38083546e60cd4250e1e8eb61915f4dd73dc024f302e711c', to: owner.address, username })
 
-      const data = await profiles.tokenURI(1)
+      // const createdProfile = await profiles.getProfileByUsername(username)
+      // const createdProfile2 = await profiles.getProfileByAddress(owner.address)
+      // console.log(createdProfile, createdProfile2);
 
-      const parsedData = base64ToJSON(data)
 
-      // console.log(parsedData);
-      
-
-      console.log(base64ToString(parsedData.image));
-      
 
     });
+    // it("Should set the right unlockTime", async function () {
+    //   const { owner, profiles } = await loadFixture(deployFixture);
 
-    
+    //   const username = `Sasha ${'😂'}`
+
+    //   await profiles.createProfile(
+    //     { imageURI: 'https://avatarko.ru/img/kartinka/1/Crazy_Frog.jpg', sig: '0x39d92deb64de7e86e4af5eec547ddd71cab383e62df3b89f4a627adcdd153a54427c5239052eba589d38083546e60cd4250e1e8eb61915f4dd73dc024f302e711c', to: owner.address, username }
+    //   )
+
+    //   const data = await profiles.tokenURI(1)
+
+    //   const parsedData = base64ToJSON(data)
+
+    //   // console.log(parsedData);
+
+
+    //   console.log(base64ToString(parsedData.image));
+
+
+    // });
+
+
   })
 })

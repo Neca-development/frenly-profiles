@@ -21,6 +21,6 @@ library DataTypes {
         address to;
         string username;
         string imageURI;
-        bytes sig;
+        // bytes sig;
     }
 }

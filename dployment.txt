@@ -1,0 +1,5 @@
+✅ signerVer:address 0xca1CdCEc0e9537CC7d586be839655049Cd38301A
+✅ profileTokenURI:address 0x8E55E88bf60E0Dc4eF29a9705b584A321EF77B23
+✅ Profiles deployed to: 0x740e0b999BBd1E92e7759c4b07C0aBF66c9c8214
+✅ Account factory deployed to: 0x41B852F60E77fF10a7a9C93D7d647f3F80fe87d0
+✅ Account wrote in profiles

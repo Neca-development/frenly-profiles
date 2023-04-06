@@ -8,14 +8,14 @@
     },
     {
       "address": "0xDc64a140Aa3E981100a9becA4E685f962f0cF6C9",
-      "txHash": "0x7366d040cb43bf5b097e6f35d0332edb7741273565707411a40ce2437fcbbbab",
+      "txHash": "0xd198e004ffc38987e5bdb2232cebd5526521065d6806a2cc03b2822485bbb3d9",
       "kind": "beacon"
     }
   ],
   "impls": {
-    "e8890225bdf3fb8a0e382acad50228feefa4379a9e2567f5c47c09c58f83377b": {
+    "1193ff52d56cf84f9b6f04f1c5f786025132df6712d36fd8e6098b8955562d07": {
       "address": "0x9fE46736679d2D9a65F0992F2272dE9f3c7fa6e0",
-      "txHash": "0x51e900cd06d69d15977c4a1a0ab8000666a06d9d2098f320a61085d64138eaa0",
+      "txHash": "0xaffd833e0f8c0d8458c944e392d5d247a93a4651441a9fe093c05136bec54e45",
       "layout": {
         "solcVersion": "0.8.17",
         "storage": [
@@ -168,7 +168,7 @@
             "label": "_profileById",
             "offset": 0,
             "slot": "251",
-            "type": "t_mapping(t_uint256,t_struct(ProfileStruct)4323_storage)",
+            "type": "t_mapping(t_uint256,t_struct(ProfileStruct)6140_storage)",
             "contract": "Profiles",
             "src": "contracts\\Profiles.sol:23"
           },
@@ -192,7 +192,7 @@
             "label": "_signerVerification",
             "offset": 0,
             "slot": "254",
-            "type": "t_contract(ISignerVerification)5145",
+            "type": "t_contract(ISignerVerification)12944",
             "contract": "Profiles",
             "src": "contracts\\Profiles.sol:28"
           },
@@ -205,28 +205,36 @@
             "src": "contracts\\Profiles.sol:29"
           },
           {
-            "label": "maxTotalSupply",
+            "label": "_accountFactory",
             "offset": 0,
             "slot": "256",
-            "type": "t_uint256",
+            "type": "t_address",
             "contract": "Profiles",
             "src": "contracts\\Profiles.sol:31"
           },
           {
-            "label": "_profileTokenUri",
+            "label": "maxTotalSupply",
             "offset": 0,
             "slot": "257",
-            "type": "t_contract(IProfileTokenURI)5119",
+            "type": "t_uint256",
             "contract": "Profiles",
-            "src": "contracts\\Profiles.sol:32"
+            "src": "contracts\\Profiles.sol:33"
+          },
+          {
+            "label": "_profileTokenUri",
+            "offset": 0,
+            "slot": "258",
+            "type": "t_contract(IProfileTokenURI)12918",
+            "contract": "Profiles",
+            "src": "contracts\\Profiles.sol:34"
           },
           {
             "label": "profilePrice",
             "offset": 0,
-            "slot": "258",
+            "slot": "259",
             "type": "t_uint256",
             "contract": "Profiles",
-            "src": "contracts\\Profiles.sol:34"
+            "src": "contracts\\Profiles.sol:36"
           }
         ],
         "types": {
@@ -262,15 +270,15 @@
             "label": "bytes32",
             "numberOfBytes": "32"
           },
-          "t_contract(IProfileTokenURI)5119": {
+          "t_contract(IProfileTokenURI)12918": {
             "label": "contract IProfileTokenURI",
             "numberOfBytes": "20"
           },
-          "t_contract(ISignerVerification)5145": {
+          "t_contract(ISignerVerification)12944": {
             "label": "contract ISignerVerification",
             "numberOfBytes": "20"
           },
-          "t_enum(FrenshipStatus)4311": {
+          "t_enum(FrenshipStatus)6128": {
             "label": "enum DataTypes.FrenshipStatus",
             "members": [
               "NEWBIE",
@@ -304,7 +312,7 @@
             "label": "mapping(uint256 => address)",
             "numberOfBytes": "32"
           },
-          "t_mapping(t_uint256,t_struct(ProfileStruct)4323_storage)": {
+          "t_mapping(t_uint256,t_struct(ProfileStruct)6140_storage)": {
             "label": "mapping(uint256 => struct DataTypes.ProfileStruct)",
             "numberOfBytes": "32"
           },
@@ -316,7 +324,7 @@
             "label": "string",
             "numberOfBytes": "32"
           },
-          "t_struct(ProfileStruct)4323_storage": {
+          "t_struct(ProfileStruct)6140_storage": {
             "label": "struct DataTypes.ProfileStruct",
             "members": [
               {
@@ -345,7 +353,7 @@
               },
               {
                 "label": "frenshipStatus",
-                "type": "t_enum(FrenshipStatus)4311",
+                "type": "t_enum(FrenshipStatus)6128",
                 "offset": 0,
                 "slot": "4"
               }

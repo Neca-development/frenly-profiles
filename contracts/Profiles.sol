@@ -14,11 +14,11 @@ import "./interface/ISignerVerification.sol";
 
 // import "hardhat/console.sol";
 
-contract Profiles is Initializable,
+contract Profiles is
+    Initializable,
     OwnableUpgradeable,
     ERC721EnumerableUpgradeable
 {
-  
     /*------------------------------------------------------Storage-------------------------------------------------------*/
     mapping(uint256 => DataTypes.ProfileStruct) internal _profileById;
     mapping(bytes32 => uint256) internal _profileIdByUsernameHash;
@@ -28,10 +28,17 @@ contract Profiles is Initializable,
     ISignerVerification internal _signerVerification;
     address internal _signer;
 
+    address private _accountFactory;
+
     uint256 public maxTotalSupply;
     IProfileTokenURI internal _profileTokenUri;
 
     uint256 public profilePrice;
+
+    modifier onlyAccountFactory(address _caller) {
+        if (_caller != _accountFactory) revert Errors.OnlyAccountFactory();
+        _;
+    }
 
     function initialize(
         address signer_,
@@ -52,20 +59,23 @@ contract Profiles is Initializable,
     }
 
     /*------------------------------------------------------Profile Logic-------------------------------------------------------*/
-    function createProfile(DataTypes.CreateProfileData memory args) external {
-        Helpers.onlyWhitelisted(
-            msg.sender,
-            args.sig,
-            _signer,
-            _signerVerification,
-            owner()
-        );
+    function createProfile(
+        DataTypes.CreateProfileData memory args
+    ) external onlyAccountFactory(msg.sender) {
+        // Helpers.onlyWhitelisted(
+        //     msg.sender,
+        //     args.sig,
+        //     _signer,
+        //     _signerVerification,
+        //     owner()
+        // );
 
-        // Helpers._validateUsername(args.username);
+        Helpers._validateUsername(args.username);
 
         bytes32 usernameHash = keccak256(bytes(args.username));
 
-        if (_profileIdByUsernameHash[usernameHash] != 0) revert Errors.UsernameAlreadyExist();
+        if (_profileIdByUsernameHash[usernameHash] != 0)
+            revert Errors.UsernameAlreadyExist();
 
         _profileIdByUsernameHash[usernameHash] = _profileCounter;
 
@@ -75,7 +85,9 @@ contract Profiles is Initializable,
         _profileById[_profileCounter].username = args.username;
         _profileById[_profileCounter].owner = args.to;
         _profileById[_profileCounter].imageURI = args.imageURI;
-        _profileById[_profileCounter].frenshipStatus = DataTypes.FrenshipStatus.NEWBIE;
+        _profileById[_profileCounter].frenshipStatus = DataTypes
+            .FrenshipStatus
+            .NEWBIE;
 
         ++_profileCounter;
     }
@@ -84,7 +96,8 @@ contract Profiles is Initializable,
         string memory _newAvatar,
         uint256 _profileId
     ) external {
-        if (bytes(_newAvatar).length == 0) revert Errors.IsRequireField("avatar");
+        if (bytes(_newAvatar).length == 0)
+            revert Errors.IsRequireField("avatar");
 
         _profileById[_profileId].imageURI = _newAvatar;
     }
@@ -100,7 +113,9 @@ contract Profiles is Initializable,
         return _profileIdByUsernameHash[usernameHash];
     }
 
-    function getProfile(uint256 id) public view returns (DataTypes.ProfileStruct memory) {
+    function getProfile(
+        uint256 id
+    ) public view returns (DataTypes.ProfileStruct memory) {
         return _profileById[id];
     }
 
@@ -132,21 +147,21 @@ contract Profiles is Initializable,
         uint256 _tokenId,
         bytes memory signature
     ) external {
-        if (
-            _signerVerification.isMessageVerified(
-                _signer,
-                signature,
-                string(
-                    abi.encodePacked(
-                        Helpers._addressToString(msg.sender),
-                        Strings.toString(uint8(_frenshipStatus)),
-                        Strings.toString(_tokenId)
-                    )
-                )
-            )
-        ) {
-            revert Errors.IncorrectSignature();
-        }
+        // if (
+        //     _signerVerification.isMessageVerified(
+        //         _signer,
+        //         signature,
+        //         string(
+        //             abi.encodePacked(
+        //                 Helpers._addressToString(msg.sender),
+        //                 Strings.toString(uint8(_frenshipStatus)),
+        //                 Strings.toString(_tokenId)
+        //             )
+        //         )
+        //     )
+        // ) {
+        //     revert Errors.IncorrectSignature();
+        // }
         _profileById[_tokenId].frenshipStatus = _frenshipStatus;
     }
 
@@ -175,5 +190,9 @@ contract Profiles is Initializable,
 
     function setProfileTokenURI(address _profileURIAddress) external onlyOwner {
         _profileTokenUri = IProfileTokenURI(_profileURIAddress);
+    }
+
+    function setAccountFactory(address accountFactory_) external onlyOwner {
+        _accountFactory = accountFactory_;
     }
 }
