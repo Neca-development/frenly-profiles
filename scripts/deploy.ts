@@ -40,21 +40,27 @@ async function main() {
   // await storage.deployed() 
   // console.log("✅ storage:address", storage.address)
 
+
   // const Profiles = await ethers.getContractFactory("Profiles", 
   // {
-  //   libraries: {
-  //     "Constants": constants.address,
-  //     "DataTypes": dataTypes.address,
-  //     "Errors": errors.address,
-  //     "Helpers": helpers.address,
-  //     "ProfileTokenURI": profileTokenURI.address
-  //   }
+    
+    // libraries: {
+    //   "Constants": constants.address,
+    //   "DataTypes": dataTypes.address,
+    //   "Errors": errors.address,
+    //   "Helpers": helpers.address,
+    //   // "ProfileTokenURI": profileTokenURI.address
+    // }
   // }
-  
   // );
+  // const profilesBeacon = await upgrades.deployBeacon(Profiles, {unsafeAllow: ['external-library-linking']});
+
+  // await profilesBeacon.deployed() 
+
+  // const profiles = await upgrades.deployBeaconProxy(profilesBeacon, Profiles, ['0xe7b5B35181eeB87A6f2EE68ef923c4016Cd552fa', signerVer.address, profileTokenURI.address, ethers.BigNumber.from('10000'), 0])
 
 
-  // const profiles = await upgrades.deployProxy(Profiles, ['0xe7b5B35181eeB87A6f2EE68ef923c4016Cd552fa', signerVer.address, profileTokenURI.address]);
+  // const profiles = await upgrades.deployProxy(Profiles, ['0xe7b5B35181eeB87A6f2EE68ef923c4016Cd552fa', signerVer.address, profileTokenURI.address, ethers.BigNumber.from(10000), 0]);
   // await profiles.deployed();
   // console.log("✅ Profiles deployed to:", profiles.address);
 }

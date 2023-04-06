@@ -1,19 +1,23 @@
 import { HardhatUserConfig } from "hardhat/config";
 import "@nomicfoundation/hardhat-toolbox";
-require('@openzeppelin/hardhat-upgrades');
+import '@openzeppelin/hardhat-upgrades';
 
 const config = {
   solidity: "0.8.17",
   settings: {
     optimizer: {
       enabled: true,
-      runs: 200,
+      runs: 1,
     }
   },
   networks: {
+    // hardhat: {
+    //   allowUnlimitedContractSize: true
+    // },
     mumbai: {
       url: 'https://polygon-mumbai.g.alchemy.com/v2/GHk7QUctHo69C1VGlveQ6cSu1-664KaS',
       accounts: ['2923eaece8b287525743a66e5159bd8c130289bddb5b2ff47b3a803bb99039d2'],
+
     },
     polygon: {
       url: 'https://polygon-mainnet.g.alchemy.com/v2/Ry95d_MJm_Civdt-BUYFSO2EdFX1bh8A',

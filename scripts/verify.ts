@@ -14,4 +14,4 @@ export async function verifyContract(address: string, ...constructorArguments: a
 // export function waitAMinute() {
 //     return new Promise(resolve => setTimeout(resolve, 60000));
 // }
-verifyContract('0xadc9B1BA4aA9DaA706F11A86532327c29e611F85')
+verifyContract('0x9ED4D5251B60a235e5F7Ad08404ccBD7bF918cF9')

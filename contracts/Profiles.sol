@@ -1,119 +1,71 @@
-// SPDX-License-Identifier: UNLICENSED
+// SPDX-License-Identifier: MIT
 pragma solidity ^0.8.9;
+pragma experimental ABIEncoderV2;
 
 import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
-import "@openzeppelin/contracts-upgradeable/token/ERC721/ERC721Upgradeable.sol";
-import "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
-
+import "@openzeppelin/contracts-upgradeable/token/ERC721/extensions/ERC721EnumerableUpgradeable.sol";
+import {Errors} from "./Errors.sol";
+import {DataTypes} from "./DataTypes.sol";
+import {Constants} from "./Constants.sol";
+import {Helpers} from "./Helpers.sol";
 import "./interface/IProfileTokenURI.sol";
 import "./interface/ISignerVerification.sol";
-// Uncomment this line to use console.log
+
 // import "hardhat/console.sol";
 
-contract Profiles is 
-    Initializable,
-    UUPSUpgradeable,
+contract Profiles is Initializable,
     OwnableUpgradeable,
-    ERC721Upgradeable {
-
-/*------------------------------------------------------Data Types----------------------------------------------------*/
-
-    struct ProfileStruct {
-        uint256 tokenId;
-        string username;
-        address owner;
-        string imageURI; 
-        string description;
-        string role;
-    }
-
-    struct CreateProfileData {
-        address to;
-        string username;
-        string imageURI;
-        bytes sig;
-        string description;
-        string role;
-    }
-/*------------------------------------------------------Storage-------------------------------------------------------*/
-    mapping(uint256 => ProfileStruct) internal _profileById;
+    ERC721EnumerableUpgradeable
+{
+  
+    /*------------------------------------------------------Storage-------------------------------------------------------*/
+    mapping(uint256 => DataTypes.ProfileStruct) internal _profileById;
     mapping(bytes32 => uint256) internal _profileIdByUsernameHash;
 
-    uint256 internal _profileCounter;
+    uint256 private _profileCounter;
 
     ISignerVerification internal _signerVerification;
     address internal _signer;
 
+    uint256 public maxTotalSupply;
     IProfileTokenURI internal _profileTokenUri;
-/*------------------------------------------------------Errors-------------------------------------------------------*/
-    error UsernameIsRequireField();
-    error UsernameAlreadyExist();
-    error UsernameNotExist();
-    error MaxUsernameLength(uint8 _maxLength);
-    error IncorrectSignature();
 
-/*------------------------------------------------------Helpers-------------------------------------------------------*/
-function onlyWhitelisted(address _sender, bytes memory signature, address signer_, ISignerVerification signerVerification, address owner_ ) internal pure {
-        if(_sender != owner_) {
-            if(signerVerification.isMessageVerified(signer_, signature, _addressToString(_sender))){
-            revert IncorrectSignature();
-        }
-        }  
-    }
+    uint256 public profilePrice;
 
-    function _addressToString(address _addr) internal pure returns (string memory) {
-		bytes memory addressBytes = abi.encodePacked(_addr);
-
-        bytes memory stringBytes = new bytes(42);
-
-        stringBytes[0] = '0';
-        stringBytes[1] = 'x';
-
-        for (uint256 i = 0; i < 20;) {
-            uint8 leftValue = uint8(addressBytes[i]) / 16;
-            uint8 rightValue = uint8(addressBytes[i]) - 16 * leftValue;
-
-            bytes1 leftChar = leftValue < 10 ? bytes1(leftValue + 48) : bytes1(leftValue + 87);
-            bytes1 rightChar = rightValue < 10 ? bytes1(rightValue + 48) : bytes1(rightValue + 87);
-
-            stringBytes[2 * i + 3] = rightChar;
-            stringBytes[2 * i + 2] = leftChar;
-
-        unchecked {i++;}}
-
-        return string(stringBytes);
-	}
-
-
-/*------------------------------------------------------Constants-------------------------------------------------------*/
-    uint8 constant MAX_USERNAME_LENGTH = 30;
-
-
-
-
-
-    function initialize(address signer_, address _signerVerificationAddress, address _profileURIAddress) initializer public {
-        __ERC721_init("FrenlyProfile", "FNS");
-         ///@dev as there is no constructor, we need to initialise the OwnableUpgradeable explicitly
+    function initialize(
+        address signer_,
+        address _signerVerificationAddress,
+        address _profileURIAddress,
+        uint256 _maxTotalSupply,
+        uint256 _profilePrice
+    ) public initializer {
+        __ERC721_init("frenly profiles", "frens");
+        ///@dev as there is no constructor, we need to initialise the OwnableUpgradeable explicitly
         __Ownable_init();
         _profileCounter = 1;
         _signer = signer_;
         _signerVerification = ISignerVerification(_signerVerificationAddress);
         _profileTokenUri = IProfileTokenURI(_profileURIAddress);
+        maxTotalSupply = _maxTotalSupply;
+        profilePrice = _profilePrice;
     }
 
-    function _authorizeUpgrade(address) internal override onlyOwner {}
-/*------------------------------------------------------Profile Logic-------------------------------------------------------*/
-    function createProfile(CreateProfileData calldata args) external {
+    /*------------------------------------------------------Profile Logic-------------------------------------------------------*/
+    function createProfile(DataTypes.CreateProfileData memory args) external {
+        Helpers.onlyWhitelisted(
+            msg.sender,
+            args.sig,
+            _signer,
+            _signerVerification,
+            owner()
+        );
 
-        onlyWhitelisted(msg.sender, args.sig, _signer, _signerVerification, owner());
+        // Helpers._validateUsername(args.username);
 
-        _validateUsername(args.username);
+        bytes32 usernameHash = keccak256(bytes(args.username));
 
-        bytes32 usernameHash = keccak256(bytes(args.username));        
-
-        if(_profileIdByUsernameHash[usernameHash] != 0) revert UsernameAlreadyExist();
+        if (_profileIdByUsernameHash[usernameHash] != 0) revert Errors.UsernameAlreadyExist();
 
         _profileIdByUsernameHash[usernameHash] = _profileCounter;
 
@@ -123,55 +75,46 @@ function onlyWhitelisted(address _sender, bytes memory signature, address signer
         _profileById[_profileCounter].username = args.username;
         _profileById[_profileCounter].owner = args.to;
         _profileById[_profileCounter].imageURI = args.imageURI;
-        _profileById[_profileCounter].description = args.description;
-        _profileById[_profileCounter].role = args.role;
+        _profileById[_profileCounter].frenshipStatus = DataTypes.FrenshipStatus.NEWBIE;
 
         ++_profileCounter;
-
     }
 
-    function getTokenIdByUsername(string memory username_) public view returns(uint256) {
-        bytes32 usernameHash = keccak256(bytes(username_)); 
+    function changeAvatar(
+        string memory _newAvatar,
+        uint256 _profileId
+    ) external {
+        if (bytes(_newAvatar).length == 0) revert Errors.IsRequireField("avatar");
 
-        if(_profileIdByUsernameHash[usernameHash] == 0) revert UsernameNotExist();
+        _profileById[_profileId].imageURI = _newAvatar;
+    }
+
+    function getTokenIdByUsername(
+        string memory username_
+    ) public view returns (uint256) {
+        bytes32 usernameHash = keccak256(bytes(username_));
+
+        if (_profileIdByUsernameHash[usernameHash] == 0)
+            revert Errors.UsernameNotExist();
 
         return _profileIdByUsernameHash[usernameHash];
     }
 
-    function getProfile(uint256 id) public view returns (ProfileStruct memory) {
+    function getProfile(uint256 id) public view returns (DataTypes.ProfileStruct memory) {
         return _profileById[id];
     }
 
-    function getProfileByUsername(string memory username_) public view returns (ProfileStruct memory) {
-        return _profileById[getTokenIdByUsername(username_)];
+    function getProfileByUsername(
+        string memory username_
+    ) external view returns (DataTypes.ProfileStruct memory) {
+        return getProfile(getTokenIdByUsername(username_));
     }
 
-    function tokenURI(uint256 tokenId) public view override returns (string memory) {
-        return _profileTokenUri.getProfileTokenURI(
-                tokenId,
-                ownerOf(tokenId),
-                _profileById[tokenId].username,
-                _profileById[tokenId].imageURI,
-                _profileById[tokenId].description,
-                _profileById[tokenId].role
-            );
-    }
-
-    function setProfileTokenURI(address _profileURIAddress)public onlyOwner{
-        _profileTokenUri = IProfileTokenURI(_profileURIAddress);
-    }
-
-    function _validateUsername(string memory _username) private pure{
-        bytes memory byteUsername = bytes(_username);
-
-        if(byteUsername.length == 0){ 
-            revert UsernameIsRequireField();
-        }
-
-        if(byteUsername.length > MAX_USERNAME_LENGTH){ 
-            revert MaxUsernameLength(MAX_USERNAME_LENGTH);
-        }
-
+    function getProfileByAddress(
+        address _profileAddress
+    ) public view returns (DataTypes.ProfileStruct memory) {
+        require(balanceOf(_profileAddress) != 0, "Profile not exist");
+        return getProfile(tokenOfOwnerByIndex(_profileAddress, 0));
     }
 
     function _afterTokenTransfer(
@@ -179,8 +122,58 @@ function onlyWhitelisted(address _sender, bytes memory signature, address signer
         address to,
         uint256 firstTokenId,
         uint256 batchSize
-    ) internal virtual override{
+    ) internal virtual override {
         _profileById[firstTokenId].owner = to;
-        super._afterTokenTransfer(from, to, firstTokenId,batchSize);
+        super._afterTokenTransfer(from, to, firstTokenId, batchSize);
+    }
+
+    function changeStatus(
+        DataTypes.FrenshipStatus _frenshipStatus,
+        uint256 _tokenId,
+        bytes memory signature
+    ) external {
+        if (
+            _signerVerification.isMessageVerified(
+                _signer,
+                signature,
+                string(
+                    abi.encodePacked(
+                        Helpers._addressToString(msg.sender),
+                        Strings.toString(uint8(_frenshipStatus)),
+                        Strings.toString(_tokenId)
+                    )
+                )
+            )
+        ) {
+            revert Errors.IncorrectSignature();
+        }
+        _profileById[_tokenId].frenshipStatus = _frenshipStatus;
+    }
+
+    /*------------------------------------------------------Operations methods-------------------------------------------------------*/
+
+    function tokenURI(
+        uint256 tokenId
+    ) public view override returns (string memory) {
+        return
+            _profileTokenUri.getProfileTokenURI(
+                tokenId,
+                ownerOf(tokenId),
+                _profileById[tokenId].username,
+                _profileById[tokenId].imageURI,
+                uint8(_profileById[tokenId].frenshipStatus)
+            );
+    }
+
+    function setMaxTotalSupply(uint256 _newMaxTotalSupply) external onlyOwner {
+        maxTotalSupply = _newMaxTotalSupply;
+    }
+
+    function setProfilePrice(uint256 _newProfilePrice) external onlyOwner {
+        profilePrice = _newProfilePrice;
+    }
+
+    function setProfileTokenURI(address _profileURIAddress) external onlyOwner {
+        _profileTokenUri = IProfileTokenURI(_profileURIAddress);
     }
 }
